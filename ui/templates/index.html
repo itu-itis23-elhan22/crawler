@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Crawler Dashboard</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #080812;
+            color: #e0e0f0;
+            min-height: 100vh;
+            padding: 24px 20px 40px;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        header h1 {
+            font-size: 30px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #a78bfa, #6366f1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+        header p {
+            color: #6b7280;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+
+        .container { max-width: 960px; margin: 0 auto; }
+
+        /* Grid layout for two columns on wide screens */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        @media (max-width: 700px) { .grid-2 { grid-template-columns: 1fr; } }
+
+        /* Cards */
+        .card {
+            background: #12121e;
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 16px;
+            border: 1px solid #1e1e35;
+            transition: border-color 0.2s;
+        }
+        .card:hover { border-color: #2d2d50; }
+        .card h2 {
+            color: #a78bfa;
+            margin-bottom: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .card h2 .icon { font-size: 18px; }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 12px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 5px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .form-row {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 9px 12px;
+            border-radius: 8px;
+            border: 1px solid #2a2a4a;
+            background: #0c0c1a;
+            color: #e0e0f0;
+            font-size: 13px;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+        input:focus, select:focus { outline: none; border-color: #6366f1; }
+
+        /* Buttons */
+        .btn {
+            padding: 9px 20px;
+            border-radius: 8px;
+            border: none;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+            font-family: inherit;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+        }
+        .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-danger {
+            background: #371e1e;
+            color: #f87171;
+            border: 1px solid #4a2020;
+        }
+        .btn-danger:hover { background: #4a2020; }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        /* Advanced options toggle */
+        .advanced-toggle {
+            font-size: 12px;
+            color: #6b7280;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 12px;
+            user-select: none;
+            width: fit-content;
+        }
+        .advanced-toggle:hover { color: #a78bfa; }
+        .advanced-toggle .chevron { transition: transform 0.2s; display: inline-block; }
+        .advanced-toggle.open .chevron { transform: rotate(90deg); }
+        .advanced-section {
+            display: none;
+            border-top: 1px solid #1e1e35;
+            padding-top: 12px;
+            margin-top: 4px;
+        }
+        .advanced-section.visible { display: block; }
+        .advanced-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+        }
+        @media (max-width: 600px) { .advanced-grid { grid-template-columns: 1fr; } }
+
+        /* Metrics */
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        @media (max-width: 600px) { .metrics { grid-template-columns: repeat(2, 1fr); } }
+
+        .metric {
+            background: #0c0c1a;
+            border-radius: 10px;
+            padding: 13px 12px;
+            text-align: center;
+            border: 1px solid #1a1a30;
+        }
+        .metric .value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #a78bfa;
+            letter-spacing: -0.5px;
+        }
+        .metric .label {
+            font-size: 11px;
+            color: #555;
+            margin-top: 3px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .metric.highlight .value { color: #34d399; }
+        .metric.warn .value { color: #fbbf24; }
+        .metric.danger .value { color: #f87171; }
+
+        /* Status badges */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+        .status-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; }
+        .badge-idle { background: #1a1a2a; color: #555; }
+        .badge-idle::before { background: #555; }
+        .badge-running { background: #0d2018; color: #34d399; }
+        .badge-running::before { background: #34d399; animation: pulse 1.5s infinite; }
+        .badge-done { background: #0d1a2e; color: #60a5fa; }
+        .badge-done::before { background: #60a5fa; }
+        .badge-stopped { background: #2e1a0d; color: #fb923c; }
+        .badge-stopped::before { background: #fb923c; }
+        .badge-paused { background: #1a1a0d; color: #fbbf24; }
+        .badge-paused::before { background: #fbbf24; animation: pulse 2s infinite; }
+        .badge-pressure { background: #2e0d0d; color: #f87171; }
+        .badge-pressure::before { background: #f87171; animation: pulse 1s infinite; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* Progress bar */
+        .progress-wrap { margin-top: 10px; }
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: #555;
+            margin-bottom: 4px;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 5px;
+            background: #1e1e35;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #6366f1, #a78bfa);
+            border-radius: 3px;
+            transition: width 0.4s ease;
+        }
+        .progress-fill.danger { background: linear-gradient(90deg, #ef4444, #f87171); }
+
+        /* Search results */
+        #searchResults { margin-top: 12px; }
+        .result-item {
+            background: #0c0c1a;
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-bottom: 8px;
+            border-left: 3px solid #6366f1;
+            transition: border-color 0.2s;
+        }
+        .result-item:hover { border-left-color: #a78bfa; }
+        .result-url {
+            color: #a78bfa;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 13px;
+            word-break: break-all;
+        }
+        .result-url:hover { text-decoration: underline; }
+        .result-meta {
+            font-size: 11px;
+            color: #555;
+            margin-top: 5px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .result-meta span { display: flex; align-items: center; gap: 3px; }
+        .result-score {
+            float: right;
+            background: #1e1e35;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #a78bfa;
+            font-weight: 600;
+        }
+
+        /* History */
+        .history-item {
+            background: #0c0c1a;
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #1a1a30;
+        }
+        .history-item .hist-url {
+            font-size: 13px;
+            font-weight: 500;
+            color: #c4b5fd;
+            word-break: break-all;
+        }
+        .history-item .hist-meta {
+            font-size: 11px;
+            color: #555;
+            margin-top: 4px;
+        }
+        .history-item .hist-right {
+            text-align: right;
+            flex-shrink: 0;
+            margin-left: 16px;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #333;
+            padding: 24px;
+            font-size: 13px;
+        }
+
+        /* Search header row */
+        .search-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .search-count {
+            font-size: 12px;
+            color: #555;
+        }
+        select.limit-sel {
+            width: auto;
+            padding: 5px 8px;
+            font-size: 12px;
+        }
+
+        /* Download buttons row */
+        .download-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+        .btn-secondary {
+            background: #1a1a2e;
+            color: #a78bfa;
+            border: 1px solid #2d2d50;
+        }
+        .btn-secondary:hover { background: #2d2d50; }
+
+        /* Log viewer */
+        .log-viewer {
+            background: #080812;
+            border: 1px solid #1e1e35;
+            border-radius: 8px;
+            padding: 12px;
+            max-height: 220px;
+            overflow-y: auto;
+            font-family: 'SFMono-Regular', Consolas, monospace;
+            font-size: 11px;
+            color: #6b7280;
+            margin-top: 10px;
+        }
+        .log-viewer .log-line { padding: 2px 0; line-height: 1.5; }
+        .log-viewer .log-line:nth-child(even) { color: #7c8a9e; }
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 14px;
+            margin-bottom: 6px;
+        }
+        .log-header span {
+            font-size: 12px;
+            color: #555;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Divider */
+        .section-divider {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 20px 0 14px;
+        }
+        .section-divider span {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #333;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .section-divider::before, .section-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #1e1e35;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🕷 Web Crawler Dashboard</h1>
+            <p>Concurrent search engine built in Go — real-time indexing &amp; search</p>
+        </header>
+
+        <!-- ======================== INDEXER CARD ======================== -->
+        <div class="card">
+            <h2><span class="icon">🔍</span> Start Indexing</h2>
+
+            <div class="form-group">
+                <label>Origin URL</label>
+                <input type="text" id="originURL" placeholder="https://example.com" value="https://go.dev/">
+            </div>
+
+            <div class="form-row" style="margin-bottom:12px;">
+                <div class="form-group" style="flex:1;margin:0;">
+                    <label>Depth (k)</label>
+                    <input type="number" id="crawlDepth" value="1" min="0" max="10">
+                </div>
+                <div class="form-group" style="flex:1;margin:0;">
+                    <label>Max URLs to Visit (0 = unlimited)</label>
+                    <input type="number" id="optMaxURLs" value="0" min="0" placeholder="0 = unlimited">
+                </div>
+                <div style="display:flex;gap:8px;align-items:flex-end;">
+                    <button class="btn btn-primary" id="startBtn" onclick="startCrawl()">▶ Start</button>
+                    <button class="btn btn-secondary" id="pauseBtn" onclick="togglePause()" style="display:none;">⏸ Pause</button>
+                    <button class="btn btn-danger" onclick="stopCrawl()">■ Stop</button>
+                </div>
+            </div>
+
+            <!-- Advanced Options -->
+            <div class="advanced-toggle" id="advToggle" onclick="toggleAdvanced()">
+                <span class="chevron">▶</span>
+                Advanced Options
+            </div>
+            <div class="advanced-section" id="advSection">
+                <div class="advanced-grid">
+                    <div class="form-group">
+                        <label>Workers (1–50)</label>
+                        <input type="number" id="optWorkers" placeholder="Default: 10" min="1" max="50">
+                    </div>
+                    <div class="form-group">
+                        <label>Rate Limit (ms/request)</label>
+                        <input type="number" id="optRateLimit" placeholder="Default: 200" min="0" max="10000">
+                    </div>
+                    <div class="form-group">
+                        <label>Queue Capacity</label>
+                        <input type="number" id="optQueueSize" placeholder="Default: 1000" min="10" max="100000">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ======================== STATUS CARD ======================== -->
+        <div class="card">
+            <h2>
+                <span class="icon">📊</span> System Status
+                <span id="statusBadge" class="status-badge badge-idle">Idle</span>
+                <span id="pressureBadge" style="display:none;" class="status-badge badge-pressure">Back Pressure</span>
+            </h2>
+
+            <div class="metrics">
+                <div class="metric highlight">
+                    <div class="value" id="metricProcessed">0</div>
+                    <div class="label">Processed</div>
+                </div>
+                <div class="metric">
+                    <div class="value" id="metricQueued">0</div>
+                    <div class="label">Queued</div>
+                </div>
+                <div class="metric">
+                    <div class="value" id="metricWorkers">0</div>
+                    <div class="label">Workers Active</div>
+                </div>
+                <div class="metric highlight">
+                    <div class="value" id="metricIndexSize">0</div>
+                    <div class="label">Index Terms</div>
+                </div>
+                <div class="metric warn">
+                    <div class="value" id="metricErrors">0</div>
+                    <div class="label">Errors</div>
+                </div>
+                <div class="metric">
+                    <div class="value" id="metricRate">200ms</div>
+                    <div class="label">Rate Limit</div>
+                </div>
+            </div>
+
+            <div class="progress-wrap">
+                <div class="progress-label">
+                    <span>Queue Fill (<span id="queuePct">0</span>% of <span id="metricCapacity">1000</span>)</span>
+                    <span id="crawlOrigin" style="color:#4a4a6a;font-size:11px;"></span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="download-row">
+                <button class="btn btn-secondary" onclick="downloadQueue()" style="font-size:12px;padding:6px 14px;">⬇ Download Queue</button>
+                <button class="btn btn-secondary" onclick="downloadLogs()" style="font-size:12px;padding:6px 14px;">⬇ Download Logs</button>
+            </div>
+
+            <div class="log-header">
+                <span>📋 Live Logs</span>
+                <span id="logCount" style="font-size:11px;color:#333;">0 entries</span>
+            </div>
+            <div class="log-viewer" id="logViewer">
+                <div class="log-line" style="color:#333;">Logs will appear here once indexing starts…</div>
+            </div>
+        </div>
+
+        <!-- ======================== SEARCH CARD ======================== -->
+        <div class="card">
+            <h2><span class="icon">🔎</span> Search</h2>
+            <div class="form-row" style="margin-bottom:10px;">
+                <input type="text" id="searchQuery" placeholder="Enter search query..." onkeypress="if(event.key==='Enter')doSearch()" style="flex:1;">
+                <select class="limit-sel" id="searchLimit">
+                    <option value="10">10 results</option>
+                    <option value="25">25 results</option>
+                    <option value="50" selected>50 results</option>
+                    <option value="100">100 results</option>
+                </select>
+                <button class="btn btn-primary" onclick="doSearch()">Search</button>
+            </div>
+
+            <div class="search-header" id="searchHeader" style="display:none;">
+                <span class="search-count" id="searchCount"></span>
+            </div>
+            <div id="searchResults">
+                <div class="empty-state">Enter a query to search indexed pages</div>
+            </div>
+        </div>
+
+        <!-- ======================== HISTORY CARD ======================== -->
+        <div class="card">
+            <h2><span class="icon">🕐</span> Crawl History</h2>
+            <div id="historyList">
+                <div class="empty-state">No crawl jobs yet</div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // ── Poll status every second, logs every 2s, history every 3s ──
+        setInterval(updateStatus, 1000);
+        setInterval(updateHistory, 3000);
+        setInterval(updateLogs, 2000);
+
+        function toggleAdvanced() {
+            const toggle = document.getElementById('advToggle');
+            const section = document.getElementById('advSection');
+            toggle.classList.toggle('open');
+            section.classList.toggle('visible');
+        }
+
+        async function updateStatus() {
+            try {
+                const resp = await fetch('/status');
+                const data = await resp.json();
+
+                document.getElementById('metricProcessed').textContent = data.urls_processed;
+                document.getElementById('metricQueued').textContent = data.urls_queued;
+                document.getElementById('metricErrors').textContent = data.error_count;
+                document.getElementById('metricCapacity').textContent = data.queue_capacity;
+                document.getElementById('metricIndexSize').textContent = data.index_size || 0;
+                document.getElementById('metricRate').textContent = (data.rate_limit_ms || 200) + 'ms';
+
+                // Workers ratio
+                const activeW = data.active_workers || 0;
+                const maxW = data.max_workers || 10;
+                document.getElementById('metricWorkers').textContent = activeW + ' / ' + maxW;
+
+                // Queue fill
+                const fillPct = data.queue_capacity > 0
+                    ? Math.round(data.urls_queued / data.queue_capacity * 100)
+                    : 0;
+                document.getElementById('queuePct').textContent = fillPct;
+                const fillEl = document.getElementById('progressFill');
+                fillEl.style.width = fillPct + '%';
+                fillEl.className = 'progress-fill' + (fillPct >= 80 ? ' danger' : '');
+
+                // Origin label
+                if (data.current_origin) {
+                    const short = data.current_origin.length > 50
+                        ? data.current_origin.slice(0, 50) + '…'
+                        : data.current_origin;
+                    document.getElementById('crawlOrigin').textContent =
+                        short + ' (depth ' + data.current_max_depth + ')';
+                }
+
+                // Back pressure badge
+                const pressEl = document.getElementById('pressureBadge');
+                pressEl.style.display = data.back_pressure ? 'inline-flex' : 'none';
+
+                // Error count styling
+                const errMetric = document.getElementById('metricErrors').closest('.metric');
+                errMetric.className = 'metric' + (data.error_count > 0 ? ' warn' : '');
+
+                // Status badge
+                const badge = document.getElementById('statusBadge');
+                const statusMap = {
+                    'running': ['Indexing…', 'badge-running'],
+                    'paused':  ['Paused ⏸',  'badge-paused'],
+                    'done':    ['Done ✓',    'badge-done'],
+                    'stopped': ['Stopped',   'badge-stopped'],
+                    'idle':    ['Idle',      'badge-idle'],
+                };
+                const [label, cls] = statusMap[data.crawl_status] || ['Idle', 'badge-idle'];
+                badge.textContent = label;
+                badge.className = 'status-badge ' + cls;
+
+                // Pause/Resume button visibility & label
+                const pauseBtn = document.getElementById('pauseBtn');
+                if (data.is_indexing) {
+                    pauseBtn.style.display = 'inline-block';
+                    if (data.is_paused) {
+                        pauseBtn.textContent = '▶ Resume';
+                        pauseBtn.dataset.paused = '1';
+                    } else {
+                        pauseBtn.textContent = '⏸ Pause';
+                        pauseBtn.dataset.paused = '0';
+                    }
+                } else {
+                    pauseBtn.style.display = 'none';
+                    pauseBtn.dataset.paused = '0';
+                }
+
+                // Max URLs info
+                if (data.max_urls && data.max_urls > 0) {
+                    const originEl = document.getElementById('crawlOrigin');
+                    const current = originEl.textContent;
+                    if (!current.includes('max')) {
+                        originEl.textContent = current + ' · max ' + data.max_urls + ' URLs';
+                    }
+                }
+
+            } catch (err) {
+                console.error('Status update failed:', err);
+            }
+        }
+
+        async function updateHistory() {
+            try {
+                const resp = await fetch('/history');
+                const data = await resp.json();
+                const container = document.getElementById('historyList');
+
+                if (!data.history || data.history.length === 0) {
+                    container.innerHTML = '<div class="empty-state">No crawl jobs yet</div>';
+                    return;
+                }
+
+                // Most recent first
+                const items = [...data.history].reverse();
+                let html = '';
+                items.forEach(function(h) {
+                    const started = h.started_at ? new Date(h.started_at * 1000).toLocaleTimeString() : '-';
+                    const finished = h.finished_at ? new Date(h.finished_at * 1000).toLocaleTimeString() : '—';
+                    const dur = (h.finished_at && h.started_at)
+                        ? ((h.finished_at - h.started_at) + 's')
+                        : 'running…';
+
+                    const statusBadge = {
+                        'running': '<span class="status-badge badge-running">Running</span>',
+                        'done':    '<span class="status-badge badge-done">Done</span>',
+                        'stopped': '<span class="status-badge badge-stopped">Stopped</span>',
+                    }[h.status] || '';
+
+                    html += '<div class="history-item">'
+                        + '<div>'
+                        + '<div class="hist-url">' + escapeHtml(h.origin) + '</div>'
+                        + '<div class="hist-meta">'
+                        + 'Depth: ' + h.max_depth
+                        + ' &nbsp;·&nbsp; ' + h.urls_processed + ' pages'
+                        + ' &nbsp;·&nbsp; ' + h.error_count + ' errors'
+                        + ' &nbsp;·&nbsp; Started: ' + started
+                        + ' &nbsp;·&nbsp; Duration: ' + dur
+                        + '</div>'
+                        + '</div>'
+                        + '<div class="hist-right">' + statusBadge + '</div>'
+                        + '</div>';
+                });
+                container.innerHTML = html;
+
+            } catch (err) {
+                console.error('History update failed:', err);
+            }
+        }
+
+        async function startCrawl() {
+            const origin = document.getElementById('originURL').value.trim();
+            const depth = parseInt(document.getElementById('crawlDepth').value) || 0;
+            const workers = parseInt(document.getElementById('optWorkers').value) || 0;
+            const rateLimit = parseInt(document.getElementById('optRateLimit').value) || 0;
+            const queueSize = parseInt(document.getElementById('optQueueSize').value) || 0;
+            const maxURLs = parseInt(document.getElementById('optMaxURLs').value) || 0;
+
+            if (!origin) { alert('Please enter an origin URL'); return; }
+
+            const btn = document.getElementById('startBtn');
+            btn.disabled = true;
+            btn.textContent = 'Starting…';
+
+            try {
+                const body = { origin, depth };
+                if (workers > 0) body.workers = workers;
+                if (rateLimit > 0) body.rate_limit_ms = rateLimit;
+                if (queueSize > 0) body.queue_size = queueSize;
+                if (maxURLs > 0) body.max_urls = maxURLs;
+
+                const resp = await fetch('/index', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+                const data = await resp.json();
+                if (data.error) { alert('Error: ' + data.error); }
+                else { updateHistory(); updateLogs(); }
+            } catch (err) {
+                alert('Failed to start crawl: ' + err);
+            } finally {
+                setTimeout(() => { btn.disabled = false; btn.textContent = '▶ Start'; }, 1000);
+            }
+        }
+
+        async function stopCrawl() {
+            try {
+                await fetch('/index', { method: 'DELETE' });
+            } catch (err) {
+                console.error('Stop failed:', err);
+            }
+        }
+
+        async function togglePause() {
+            const btn = document.getElementById('pauseBtn');
+            const isPaused = btn.dataset.paused === '1';
+            const action = isPaused ? 'resume' : 'pause';
+            try {
+                await fetch('/index?action=' + action, { method: 'PATCH' });
+                await updateStatus();
+            } catch (err) {
+                console.error('Pause/resume failed:', err);
+            }
+        }
+
+        async function updateLogs() {
+            try {
+                const resp = await fetch('/logs');
+                const data = await resp.json();
+                const viewer = document.getElementById('logViewer');
+                const countEl = document.getElementById('logCount');
+
+                if (!data.logs || data.logs.length === 0) return;
+
+                countEl.textContent = data.count + ' entries';
+
+                // Auto-scroll to bottom only when user is already near bottom
+                const atBottom = viewer.scrollHeight - viewer.scrollTop <= viewer.clientHeight + 60;
+
+                // Show oldest first (chronological, newest at bottom)
+                let html = '';
+                data.logs.forEach(function(line) {
+                    html += '<div class="log-line">' + escapeHtml(line) + '</div>';
+                });
+                viewer.innerHTML = html;
+
+                if (atBottom) viewer.scrollTop = viewer.scrollHeight;
+            } catch (err) {
+                // Silently ignore — logs are non-critical
+            }
+        }
+
+        function downloadLogs() {
+            window.open('/logs?format=text', '_blank');
+        }
+
+        function downloadQueue() {
+            window.open('/queue?format=text', '_blank');
+        }
+
+        async function doSearch() {
+            const query = document.getElementById('searchQuery').value.trim();
+            if (!query) return;
+            const limit = document.getElementById('searchLimit').value;
+
+            try {
+                const resp = await fetch('/search?query=' + encodeURIComponent(query) + '&limit=' + limit);
+                const data = await resp.json();
+
+                const container = document.getElementById('searchResults');
+                const header = document.getElementById('searchHeader');
+                const countEl = document.getElementById('searchCount');
+
+                if (!data.results || data.results.length === 0) {
+                    header.style.display = 'none';
+                    container.innerHTML = '<div class="empty-state">No results found for "' + escapeHtml(query) + '"</div>';
+                    return;
+                }
+
+                countEl.textContent = 'Showing ' + data.count + ' of ' + data.total_found + ' results for "' + query + '"';
+                header.style.display = 'flex';
+
+                let html = '';
+                data.results.forEach(function(r) {
+                    html += '<div class="result-item">'
+                        + '<span class="result-score">Score: ' + r.score.toFixed(3) + '</span>'
+                        + '<a class="result-url" href="' + escapeHtml(r.relevant_url) + '" target="_blank">'
+                        + escapeHtml(r.relevant_url)
+                        + '</a>'
+                        + '<div class="result-meta">'
+                        + '<span>🌐 Origin: ' + escapeHtml(r.origin_url) + '</span>'
+                        + '<span>📍 Depth: ' + r.depth + '</span>'
+                        + '</div>'
+                        + '</div>';
+                });
+                container.innerHTML = html;
+
+            } catch (err) {
+                console.error('Search failed:', err);
+            }
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.appendChild(document.createTextNode(str));
+            return div.innerHTML;
+        }
+
+        // Initial load
+        updateStatus();
+        updateHistory();
+        updateLogs();
+    </script>
+</body>
+</html>
