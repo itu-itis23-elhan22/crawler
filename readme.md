@@ -1,7 +1,11 @@
 # Web Crawler & Search Engine
 
 **GitHub Repository:** https://github.com/itu-itis23-elhan22/crawler
-**YoutubeVideoLink:**  
+
+**Project Demo (YouTube):** [https://youtu.be/Ev6KNhs1c38](https://youtu.be/Ev6KNhs1c38)
+
+## Dashboard Preview
+![Web Crawler Dashboard](./dashboard_preview.png)
 
 A concurrent web crawler and real-time search engine built in Go. Crawls web pages from a starting URL up to a configurable depth, builds an inverted index, and provides keyword-based search with relevancy ranking — all while indexing is still active.
 
