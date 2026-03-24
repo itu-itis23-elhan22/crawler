@@ -19,14 +19,14 @@ cd crawler
 # Build and run
 go run main.go
 
-# Dashboard available at http://localhost:8080
+# Dashboard available at http://localhost:3600
 ```
 
 Requirements: Go 1.21+. No Docker, no external services — runs entirely on localhost.
 
-If port 8080 is already in use from a previous session:
+If port 3600 is already in use from a previous session:
 ```bash
-kill $(lsof -ti :8080)
+kill $(lsof -ti :3600)
 ```
 
 ## Architecture
@@ -36,10 +36,10 @@ The system is split into five focused packages:
 | Package | Responsibility |
 |---------|---------------|
 | `crawler/` | Worker pool, task orchestration, pause/resume, log buffer |
-| `index/` | Thread-safe inverted index with TF-based relevancy scoring |
+| `index/` | Thread-safe inverted index with frequency-based relevancy scoring |
 | `crawler/fetcher.go` | HTTP client with timeout and content-type filtering |
 | `crawler/parser.go` | Regex-based link extraction and word tokenization |
-| `storage/` | Gob-based persistence with atomic writes and auto-save |
+| `storage/` | Gob-based persistence + per-letter word files (`data/storage/`) |
 | `ui/` | HTTP API handlers and HTML dashboard template |
 
 ## How It Works
@@ -113,14 +113,24 @@ Verified with `go test -race ./...` — no data races detected.
 ## Relevancy Scoring
 
 ```
-score = (term_count / total_words) * 100
-      × (2.0 if term in page title)
-      × (1.0 / (1 + depth × 0.1))
+score = (frequency × 10) + 1000 - (depth × 5)
 ```
 
-- **TF (Term Frequency)**: normalized — long and short pages are comparable
-- **Title Boost**: 2× multiplier when the search term appears in `<title>`
-- **Depth Penalty**: pages closer to the origin score slightly higher
+- **Frequency**: raw number of times the search term appears on the page
+- **1000**: exact match bonus applied to every matching page
+- **Depth Penalty**: pages discovered closer to the origin score higher (`depth × 5` subtracted)
+
+## Storage Files
+
+After each page is indexed, word entries are written to `data/storage/[letter].data`.
+Each line format: `word url origin depth frequency`
+
+Example (`data/storage/p.data`):
+```
+program https://go.dev/doc/ https://go.dev/ 1 5
+page https://go.dev/doc/ https://go.dev/ 1 3
+programming https://go.dev/blog/ https://go.dev/ 2 8
+```
 
 ## Project Structure
 

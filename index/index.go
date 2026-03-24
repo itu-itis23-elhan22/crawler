@@ -1,7 +1,6 @@
 package index
 
 import (
-	"math"
 	"sort"
 	"strings"
 	"sync"
@@ -166,25 +165,11 @@ type scoredResult struct {
 }
 
 // calculateScore computes a relevancy score for a term-page pair.
-// Uses TF (Term Frequency) with a title boost.
+// Formula: (frequency × 10) + 1000 (exact match bonus) - (depth × 5)
 func calculateScore(entry IndexEntry) float64 {
-	// TF = term count / total words on page
-	// This normalizes: a page with 1000 words where "go" appears 10 times
-	// scores the same as a page with 100 words where "go" appears 1 time
-	tf := float64(entry.TermCount) / math.Max(float64(entry.TotalWords), 1)
-
-	// Base score from term frequency (scaled up for readability)
-	score := tf * 100
-
-	// Title boost: if the term is in the page title, it's much more relevant
-	if entry.InTitle {
-		score *= 2.0
+	score := float64(entry.TermCount*10) + 1000 - float64(entry.Depth*5)
+	if score < 0 {
+		score = 0
 	}
-
-	// Depth penalty: pages closer to origin are slightly more relevant
-	// depth 0 = no penalty, depth 1 = small penalty, etc.
-	depthPenalty := 1.0 / (1.0 + float64(entry.Depth)*0.1)
-	score *= depthPenalty
-
 	return score
 }

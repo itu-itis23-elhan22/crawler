@@ -267,12 +267,11 @@ func TestCalculateScore(t *testing.T) {
 		t.Errorf("score should be positive, got %f", score)
 	}
 
-	// Title boost: same entry but term is in title
-	entryWithTitle := entry
-	entryWithTitle.InTitle = true
-	titleScore := calculateScore(entryWithTitle)
-	if titleScore <= score {
-		t.Errorf("title boost should increase score: %f <= %f", titleScore, score)
+	// Formula: (freq×10) + 1000 - (depth×5)
+	// depth=0, freq=1 → (1×10) + 1000 - (0×5) = 1010
+	expected := float64(entry.TermCount*10) + 1000 - float64(entry.Depth*5)
+	if score != expected {
+		t.Errorf("score should be %f, got %f", expected, score)
 	}
 
 	// Depth penalty: deeper pages should score less

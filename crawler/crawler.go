@@ -11,6 +11,7 @@ import (
 
 	"crawler/index"
 	"crawler/models"
+	"crawler/storage"
 )
 
 // Config holds all configurable parameters for the crawler.
@@ -36,9 +37,10 @@ const maxLogEntries = 500
 
 // Crawler orchestrates the entire crawling process.
 type Crawler struct {
-	config  Config
-	fetcher *Fetcher
-	idx     *index.InvertedIndex
+	config    Config
+	fetcher   *Fetcher
+	idx       *index.InvertedIndex
+	fileStore *storage.FileStore
 
 	// Visited set: tracks which URLs we've already crawled
 	visitedMu sync.Mutex
@@ -79,14 +81,15 @@ type Crawler struct {
 	history   []models.CrawlHistoryEntry
 }
 
-// NewCrawler creates a new Crawler with the given config and shared index.
-func NewCrawler(config Config, idx *index.InvertedIndex) *Crawler {
+// NewCrawler creates a new Crawler with the given config, shared index, and file store.
+func NewCrawler(config Config, idx *index.InvertedIndex, fs *storage.FileStore) *Crawler {
 	pauseCh := make(chan struct{})
 	close(pauseCh) // Start unpaused: reads on a closed channel return immediately
 	return &Crawler{
 		config:      config,
 		fetcher:     NewFetcher(config.FetchTimeout),
 		idx:         idx,
+		fileStore:   fs,
 		visited:     make(map[string]bool),
 		queue:       make(chan models.CrawlTask, config.QueueSize),
 		crawlStatus: models.CrawlStatusIdle,
@@ -342,6 +345,11 @@ func (c *Crawler) processTask(ctx context.Context, task models.CrawlTask) {
 	pageData := ParseHTML(html, task.URL, task.Origin, task.Depth)
 	c.idx.Add(pageData)
 	atomic.AddInt64(&c.urlsProcessed, 1)
+
+	// Write word entries to data/storage/[letter].data files
+	if err := c.fileStore.WriteWords(pageData.Words, task.URL, task.Origin, task.Depth); err != nil {
+		log.Printf("[FileStore] Write error for %s: %v", task.URL, err)
+	}
 
 	c.appendLog(fmt.Sprintf("Stored %d unique words from %s", len(pageData.Words), task.URL))
 

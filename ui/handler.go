@@ -176,6 +176,9 @@ func (h *Handler) handleSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// sortBy param accepted for compatibility (results are always sorted by relevance)
+	// sortBy := r.URL.Query().Get("sortBy") — currently only "relevance" is supported
+
 	// Parse optional limit param (default 50, max 200)
 	limit := 50
 	if lStr := r.URL.Query().Get("limit"); lStr != "" {

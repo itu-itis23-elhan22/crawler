@@ -43,9 +43,12 @@ func main() {
 		log.Printf("[Persistence] No previous state found — starting fresh")
 	}
 
+	// ── File Store (data/storage/[letter].data) ──────────────────────
+	fs := storage.NewFileStore()
+
 	// ── Crawler ─────────────────────────────────────────────────────
 	config := crawler.DefaultConfig()
-	c := crawler.NewCrawler(config, idx)
+	c := crawler.NewCrawler(config, idx, fs)
 
 	// Restore visited URLs if available
 	if pm.HasSavedState() {
@@ -85,7 +88,7 @@ func main() {
 	mux := http.NewServeMux()
 	handler.RegisterRoutes(mux)
 
-	addr := ":8080"
+	addr := ":3600"
 	log.Printf("Dashboard running at http://localhost%s", addr)
 	log.Fatal(http.ListenAndServe(addr, mux))
 }
