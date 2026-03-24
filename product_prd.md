@@ -63,18 +63,14 @@ Build a concurrent web crawler and real-time search engine in Go that runs on a 
 
 **Relevancy Formula:**
 ```
-score = TF x title_boost x depth_factor
-
-TF           = term_count / total_words_on_page
-title_boost  = 2.0  if term appears in <title>, else 1.0
-depth_factor = 1.0 / (1 + depth x 0.1)
+score = (frequency x 10) + 1000 - (depth x 5)
 ```
 
 **Live Search:** Search runs concurrently with indexing. The inverted index is protected by `sync.RWMutex`, so multiple search queries can run simultaneously alongside ongoing writes.
 
 ### 2.3 System Visibility
 
-**Dashboard (`GET /`):** Single-page web UI at `http://localhost:8080` with:
+**Dashboard (`GET /`):** Single-page web UI at `http://localhost:3600` with:
 - Start / Stop / Pause / Resume crawl controls
 - Origin URL, depth, max URLs, and advanced options (workers, rate limit, queue capacity)
 - Real-time metrics: URLs processed, queue depth, active workers, index size, error count
@@ -189,4 +185,4 @@ crawler_submission/
 | Pause | `chan struct{}` (open/closed) | All workers block on a read; closing unblocks all simultaneously |
 | Persistence | `encoding/gob` + atomic rename | No external DB; fast binary encoding; crash-safe |
 | HTML Parsing | `regexp` | Avoids external dependency; sufficient for well-formed HTML |
-| Scoring | TF + title boost + depth penalty | Simple, interpretable; effective for keyword matching |
+| Scoring | `(freq×10) + 1000 - (depth×5)` | Simple, interpretable; consistent with file storage format |
